@@ -97,7 +97,7 @@ RP.pdf = (function () {
       head: [["Land", "Einreise", "Sicherheit", "Gesundheit"]],
       body: result.stops.map((x) => {
         const c = x.country;
-        const w = RP.live.warning(c.iso);
+        const w = RP.live.warning(c);
         const health = [c.health.yf === 2 ? "Gelbfieber Pflicht" : c.health.yf === 1 ? "Gelbfieber empfohlen" : "", c.health.mal === 2 ? "Malaria-Prophylaxe" : c.health.mal === 1 ? "Malaria regional" : ""].filter(Boolean).join(", ") || "-";
         return [clean(c.name), clean(RP.VISA_LABEL[c.visa.t] + ": " + c.visa.n), clean(RP.SAFETY_LABEL[x.safety] + ". " + c.sn + (w && w.level ? " Auswärtiges Amt: " + w.label + "." : "")), clean(health)];
       }),

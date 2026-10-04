@@ -11,6 +11,9 @@
  *  health  yf: Gelbfieber 0 nein / 1 empfohlen / 2 Pflicht, mal: Malaria 0 nein / 1 regional / 2 Prophylaxe empfohlen
  *  extras  typische Zusatzkosten (USD), im Planer einzeln zuschaltbar
  *  hub     Koordinaten des Hauptflughafens (für Distanzen & Flugschätzung)
+ *  parent  optional: übergeordneter Staat für Live-Reisewarnungen (z.B. Schottland → GBR)
+ *
+ * Weitere Länder in countries2.js und countries3.js (kompaktes Format).
  */
 
 window.ACTIVITIES = {
@@ -32,7 +35,7 @@ window.ACTIVITIES = {
   kultur: "Kultur & Städte",
 };
 
-window.REGIONS = ["Europa", "Afrika", "Naher Osten", "Asien", "Ozeanien", "Nordamerika", "Mittelamerika", "Südamerika"];
+window.REGIONS = ["Europa", "Afrika", "Naher Osten", "Asien", "Ozeanien", "Nordamerika", "Mittelamerika", "Karibik", "Südamerika", "Antarktis"];
 
 window.COUNTRIES = [
   // ───────────────────────── Europa ─────────────────────────
@@ -57,17 +60,6 @@ window.COUNTRIES = [
     visa: { t: "frei", d: 90, fee: 0, n: "Schengen – Identitätskarte genügt" },
     safety: 1, sn: "Sehr sicher. Vulkanaktivität (Reykjanes) und Wetter beachten.",
     health: { yf: 0, mal: 0 }, extras: [{ n: "Camper-Miete (Aufpreis 14 Tage)", usd: 1200 }],
-  },
-  {
-    iso: "GBR", name: "Grossbritannien", region: "Europa", hub: [51.47, -0.45], currency: "GBP",
-    cost: [80, 150, 280], clim: "SSSOGGGGOSSS", crowd: "111223332111",
-    cn: "Mai–Sep am angenehmsten, Schottland im Mai/Juni oft am trockensten. Regen ist immer möglich.",
-    acts: ["wandern", "trekking", "velo", "kultur", "roadtrip", "kajak"],
-    sights: ["Schottische Highlands & Isle of Skye", "West Highland Way", "Lake District", "Snowdonia (Eryri)", "Edinburgh", "London"],
-    tips: ["Wildcampen in Schottland erlaubt", "Im Sommer Mücken (Midges) in Schottland – Schutz mitnehmen", "Bahn früh buchen, Railcard prüfen"],
-    visa: { t: "eta", d: 180, fee: 20, n: "ETA (Electronic Travel Authorisation) online vor Abreise, ca. GBP 16. Reisepass nötig." },
-    safety: 1, sn: "Sicher. Erhöhte Terrorwarnstufe in Grossstädten.",
-    health: { yf: 0, mal: 0 }, extras: [],
   },
   {
     iso: "PRT", name: "Portugal", region: "Europa", hub: [38.77, -9.13], currency: "EUR",

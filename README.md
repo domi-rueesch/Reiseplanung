@@ -29,7 +29,9 @@ Der Plan, die Filter und die abgehakten Punkte der Checkliste werden automatisch
 
 ## Daten und Aktualisierung
 
-- Die Länderdaten (Kosten, Klima, Sehenswürdigkeiten, Visa, Sicherheit) sind kuratiert in `js/data/countries.js` (63 Länder, Stand Herbst 2026).
+- Die Länderdaten (Kosten, Klima, Sehenswürdigkeiten, Visa, Sicherheit) sind kuratiert in `js/data/countries.js`, `countries2.js` und `countries3.js` – 197 Länder und Gebiete, also die ganze Weltkarte inkl. Antarktis (Stand Herbst 2026).
+- Grossbritannien ist aufgeteilt in England, Schottland, Wales und Nordirland. Kleine Inselstaaten (z.B. Malediven, Mauritius, Karibikinseln) erscheinen auf der Karte als Punkt.
+- Länder mit Reisewarnung (z.B. Afghanistan, Sudan) sind enthalten, werden aber mit dem Standardfilter «ohne Reise nicht empfohlen» ausgeblendet.
 - **Alle 14 Tage beim Öffnen** werden automatisch aktualisiert:
   - Wechselkurs USD → CHF (Frankfurter / EZB)
   - Reisewarnungen (Open Data des Auswärtigen Amts DE – das EDA bietet keine maschinenlesbare Schnittstelle). Die strengere Einstufung aus kuratierten Daten und Live-Daten wird angezeigt.
@@ -39,7 +41,7 @@ Der Plan, die Filter und die abgehakten Punkte der Checkliste werden automatisch
 
 ## Weitere Länder hinzufügen
 
-In `js/data/countries.js` einen Eintrag nach dem Muster der bestehenden Länder ergänzen (Felder sind oben in der Datei erklärt). Der `iso`-Code (ISO 3166 Alpha-3) verbindet den Eintrag mit der Karte.
+In `js/data/countries3.js` mit `K(...)` einen Eintrag nach dem Muster der bestehenden Länder ergänzen (Felder sind oben in `countries.js` und `countries2.js` erklärt). Der `iso`-Code (ISO 3166 Alpha-3) verbindet den Eintrag mit der Karte.
 
 ## Technik
 

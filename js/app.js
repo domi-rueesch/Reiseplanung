@@ -19,6 +19,10 @@
     acts: [], weather: false, crowd: false, visa: false, safety: 3,
   };
   const plan = Object.assign({}, DEFAULT_PLAN, RP.store.get("plan", {}));
+  // Ältere Pläne: Grossbritannien ist jetzt in Landesteile aufgeteilt; unbekannte Länder entfernen
+  plan.stops = plan.stops
+    .map((s) => (s.iso === "GBR" ? Object.assign({}, s, { iso: "ENG", extras: [] }) : s))
+    .filter((s) => RP.byIso[s.iso]);
   const filters = Object.assign({}, DEFAULT_FILTERS, RP.store.get("filters", {}));
   const checked = RP.store.get("checked", {});
   let selectedIso = null;
@@ -185,7 +189,7 @@
   }
 
   function featureStyle(feature) {
-    const c = RP.byIso[feature.properties.iso];
+    const c = RP.lookup(feature.properties.iso);
     const sel = c && c.iso === selectedIso;
     return {
       fillColor: countryFill(c), fillOpacity: c ? 0.9 : 0.6,
@@ -202,7 +206,7 @@
   const geoLayer = L.geoJSON(WORLD_GEO, {
     style: featureStyle,
     onEachFeature(feature, layer) {
-      const c = RP.byIso[feature.properties.iso];
+      const c = RP.lookup(feature.properties.iso);
       layer.bindTooltip(() => tooltip(c, feature.properties.name), { sticky: true });
       if (c) layer.on("click", () => selectCountry(c.iso));
       layer.on("mouseover", () => layer.setStyle({ fillOpacity: 1, weight: Math.max(1.5, featureStyle(feature).weight) }));
@@ -254,7 +258,7 @@
     const m = filters.month;
     const rate = live.rate();
     const safety = live.safety(c);
-    const w = live.warning(c.iso);
+    const w = live.warning(c);
     const inPlan = plan.stops.filter((s) => s.iso === iso);
 
     const monthsHtml = RP.MONTHS_SHORT.map((name, i) => `
@@ -585,7 +589,7 @@
   const planMap = L.map("plan-map", { worldCopyJump: false, minZoom: 1, zoomSnap: 0.25, attributionControl: false }).setView([20, 20], 1.5);
   // Welt dreimal nebeneinander, damit Routen über die Datumsgrenze (z.B. Südamerika → Neuseeland) korrekt aussehen
   [-360, 0, 360].forEach((off) => L.geoJSON(WORLD_GEO, {
-    style: (f) => ({ fillColor: RP.byIso[f.properties.iso] ? "#dbe4ee" : "#eceff3", fillOpacity: 1, color: "#fff", weight: 0.5 }),
+    style: (f) => ({ fillColor: RP.lookup(f.properties.iso) ? "#dbe4ee" : "#eceff3", fillOpacity: 1, color: "#fff", weight: 0.5 }),
     coordsToLatLng: (c) => L.latLng(c[1], c[0] + off),
   }).addTo(planMap));
   const routeLayer = L.layerGroup().addTo(planMap);

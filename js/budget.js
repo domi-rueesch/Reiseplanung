@@ -6,7 +6,8 @@ RP.budget = (function () {
   // Preisniveau für Flüge je Region (1 = Durchschnitt)
   const FLIGHT_FACTOR = {
     "Europa": 0.85, "Afrika": 1.3, "Naher Osten": 1.0, "Asien": 0.8,
-    "Ozeanien": 1.1, "Nordamerika": 1.0, "Mittelamerika": 1.0, "Südamerika": 1.1,
+    "Ozeanien": 1.1, "Nordamerika": 1.0, "Mittelamerika": 1.0, "Karibik": 1.1, "Südamerika": 1.1,
+    "Antarktis": 1.2,
   };
   // Saisonzuschlag auf Tageskosten nach Touristenaufkommen
   const SEASON_FACTOR = { 1: 0.92, 2: 1.0, 3: 1.1 };

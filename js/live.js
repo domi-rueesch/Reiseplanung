@@ -92,10 +92,11 @@ RP.live = (function () {
     needsRefresh: () => ageDays() >= MAX_AGE_DAYS,
     refresh,
     rate: () => state.rate || FALLBACK_RATE,
-    warning: (iso) => state.warnings[iso] || null,
+    /* Live-Warnung für ein Land (Landesteile wie Schottland nutzen den übergeordneten Staat) */
+    warning: (country) => state.warnings[country.parent || country.iso] || null,
     /* Sicherheitsstufe: höherer Wert aus kuratierten Daten und Live-Warnung */
     safety(country) {
-      const w = state.warnings[country.iso];
+      const w = state.warnings[country.parent || country.iso];
       return Math.max(country.safety, w ? w.level : 0);
     },
     nextRefresh: () => (state.fetchedAt ? state.fetchedAt + MAX_AGE_DAYS * RP.DAY_MS : null),

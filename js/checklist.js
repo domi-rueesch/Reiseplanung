@@ -17,9 +17,14 @@ RP.checklist = (function () {
     MDV: "Malediven: IMUGA-Formular 96 h vor Ankunft",
     COL: "Kolumbien: Check-MIG 72 h vor Ankunft",
     IDN: "Indonesien: All Indonesia / e-CD Zollformular",
+    SGP: "Singapur: SG Arrival Card max. 3 Tage vor Ankunft",
+    DOM: "Dominikanische Republik: e-Ticket vor Ein- und Ausreise",
+    CUB: "Kuba: D'Viajeros-Formular vor Ankunft",
+    CPV: "Kap Verde: EASE-Vorabregistrierung mind. 5 Tage vor Ankunft",
+    PLW: "Palau: Online-Einreiseformular und Palau Pledge",
   };
 
-  const HIGH_ALTITUDE = ["NPL", "BTN", "PER", "BOL", "ECU", "KGZ", "CHL", "TZA"];
+  const HIGH_ALTITUDE = ["NPL", "BTN", "PER", "BOL", "ECU", "KGZ", "CHL", "TZA", "PAK", "TJK", "ETH", "LSO"];
 
   /* Kontext aus dem berechneten Plan ableiten */
   function context(result) {
@@ -32,7 +37,7 @@ RP.checklist = (function () {
       nonEurope: has((c) => c.region !== "Europa"),
       yf: has((c) => c.health.yf > 0),
       malaria: has((c) => c.health.mal > 0),
-      tropical: has((c) => ["Asien", "Afrika", "Mittelamerika", "Südamerika", "Ozeanien"].includes(c.region)),
+      tropical: has((c) => ["Asien", "Afrika", "Mittelamerika", "Karibik", "Südamerika", "Ozeanien"].includes(c.region)),
       visa: countries.filter((c) => c.visa.t !== "frei"),
       diving: has((c) => c.acts.includes("tauchen")),
       trekking: has((c) => c.acts.includes("trekking")),

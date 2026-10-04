@@ -15,6 +15,10 @@ RP.AIRPORTS = {
 RP.byIso = {};
 COUNTRIES.forEach((c) => (RP.byIso[c.iso] = c));
 
+/* Kartengebiete ohne eigene Daten, die einem Land zugeordnet werden */
+RP.ALIAS = { CYN: "CYP", SOL: "SOM" };
+RP.lookup = (iso) => RP.byIso[iso] || RP.byIso[RP.ALIAS[iso]] || null;
+
 /* localStorage kann blockiert sein (privates Fenster) – deshalb immer abgesichert */
 RP.store = {
   get(key, fallback) {
