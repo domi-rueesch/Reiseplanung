@@ -58,6 +58,7 @@
     document.querySelectorAll(".view").forEach((v) => v.classList.toggle("active", v.id === "view-" + view));
     if (view === "map") setTimeout(() => map.invalidateSize(), 0);
     if (view === "plan") setTimeout(() => { planMap.invalidateSize(); drawPlanMap(); }, 0);
+    if (view === "gen") setTimeout(() => { genMap.invalidateSize(); drawGenMap(); }, 0);
   }
 
   // ───────────── Datenstatus ─────────────
@@ -646,6 +647,193 @@
     renderChecklist();
   });
 
+  // ───────────── Reise-Generator ─────────────
+  const gen = Object.assign({
+    start: plan.start, dur: 3, unit: 30, budget: 10000, style: 0, weather: "ok", crowd: "lieber",
+    pace: "ausgewogen", kind: "gemischt", acts: [], regions: [], safety: 2,
+  }, RP.store.get("gen", {}));
+  const saveGen = () => RP.store.set("gen", gen);
+  const SUGG_COLORS = ["#2c5282", "#e8590c", "#2f9e44"];
+  let genPicks = [];
+
+  const genMap = L.map("gen-map", { minZoom: 1, zoomSnap: 0.25, attributionControl: false }).setView([20, 20], 1.5);
+  [-360, 0, 360].forEach((off) => L.geoJSON(WORLD_GEO, {
+    style: (f) => ({ fillColor: RP.lookup(f.properties.iso) ? "#dbe4ee" : "#eceff3", fillOpacity: 1, color: "#fff", weight: 0.5 }),
+    coordsToLatLng: (c) => L.latLng(c[1], c[0] + off),
+  }).addTo(genMap));
+  const genLayer = L.layerGroup().addTo(genMap);
+
+  const genDays = () => Math.min(730, Math.max(1, Math.round(gen.dur * gen.unit)));
+
+  function initGenerator() {
+    $("g-acts").innerHTML = Object.entries(ACTIVITIES).map(([k, v]) => `<button class="chip" data-act="${k}">${v}</button>`).join("");
+    $("g-regions").innerHTML = REGIONS.map((r) => `<button class="chip" data-region="${r}">${r}</button>`).join("");
+    syncGenInputs();
+
+    const bind = (id, key, conv) => $(id).addEventListener("change", (e) => { gen[key] = conv(e.target); saveGen(); syncGenInputs(); });
+    bind("g-start", "start", (t) => t.value || nextMonthStart());
+    bind("g-dur", "dur", (t) => Math.max(1, +t.value || 1));
+    bind("g-unit", "unit", (t) => +t.value);
+    bind("g-budget", "budget", (t) => Math.max(100, +t.value || 100));
+    bind("g-style", "style", (t) => +t.value);
+    bind("g-weather", "weather", (t) => t.value);
+    bind("g-crowd", "crowd", (t) => t.value);
+    bind("g-pace", "pace", (t) => t.value);
+    bind("g-kind", "kind", (t) => t.value);
+    bind("g-safety", "safety", (t) => +t.value);
+    const toggle = (list, v) => (list.includes(v) ? list.filter((x) => x !== v) : list.concat(v));
+    $("g-acts").addEventListener("click", (e) => {
+      const k = e.target.dataset && e.target.dataset.act;
+      if (k) { gen.acts = toggle(gen.acts, k); saveGen(); syncGenInputs(); }
+    });
+    $("g-regions").addEventListener("click", (e) => {
+      const r = e.target.dataset && e.target.dataset.region;
+      if (r) { gen.regions = toggle(gen.regions, r); saveGen(); syncGenInputs(); }
+    });
+    $("g-run").addEventListener("click", runGenerator);
+  }
+
+  function syncGenInputs() {
+    $("g-start").value = gen.start;
+    $("g-dur").value = gen.dur;
+    $("g-unit").value = gen.unit;
+    $("g-budget").value = gen.budget;
+    $("g-style").value = gen.style;
+    $("g-weather").value = gen.weather;
+    $("g-crowd").value = gen.crowd;
+    $("g-pace").value = gen.pace;
+    $("g-kind").value = gen.kind;
+    $("g-safety").value = gen.safety;
+    document.querySelectorAll("#g-acts .chip").forEach((c) => c.classList.toggle("on", gen.acts.includes(c.dataset.act)));
+    document.querySelectorAll("#g-regions .chip").forEach((c) => c.classList.toggle("on", gen.regions.includes(c.dataset.region)));
+    const days = genDays();
+    $("g-budget-hint").textContent = days + " Tage · ca. " + RP.chf(gen.budget / days) +
+      " pro Tag – inkl. Flüge, Versicherung, Impfungen und Reserve gemäss den Einstellungen im Reiseplan.";
+  }
+
+  function runGenerator() {
+    const btn = $("g-run");
+    btn.disabled = true;
+    btn.textContent = "Würfle …";
+    // kurz warten, damit der Button-Text sichtbar wird
+    setTimeout(() => {
+      const opts = {
+        start: gen.start, days: genDays(), budget: gen.budget, style: gen.style, pace: gen.pace,
+        weather: gen.weather, crowd: gen.crowd, kind: gen.kind, acts: gen.acts, regions: gen.regions,
+        maxSafety: gen.safety, airport: plan.airport,
+      };
+      const settings = {
+        reservePct: plan.reservePct, insurancePerMonth: plan.insurancePerMonth,
+        equipment: plan.equipment, includeHealth: plan.includeHealth,
+      };
+      const res = RP.generator.generate(opts, settings, 3, Math.floor(Math.random() * 1e9));
+      genPicks = res.picks;
+      renderGenResults(res);
+      btn.disabled = false;
+      btn.textContent = "🎲 Nochmals würfeln";
+    }, 30);
+  }
+
+  function regionTitle(stops) {
+    const regions = [...new Set(stops.map((s) => s.country.region))];
+    return regions.join(" & ");
+  }
+
+  function renderGenResults(res) {
+    const list = $("gen-list");
+    if (!res.picks.length) {
+      list.innerHTML = `<div class="card"><strong>Keine passende Route gefunden.</strong>
+        <p class="hint">Tipp: Wetter auf «Ideal oder okay» stellen, weitere Regionen oder weniger Aktivitäten wählen, oder ein anderes Startdatum probieren.</p></div>`;
+      drawGenMap();
+      return;
+    }
+    const intro = res.withinBudget ? "" : `<div class="card"><strong class="over">Keine Route passt ins Budget von ${RP.chf(gen.budget)}.</strong>
+      <p class="hint">Hier die günstigsten Varianten. Tipp: Budget erhöhen, Dauer kürzen, Backpacker-Stil wählen oder günstigere Regionen (z.B. Asien, Südamerika) auswählen.</p></div>`;
+    const few = res.picks.length < 3 && res.withinBudget ? `<div class="card hint">Nur ${res.picks.length} passende ${res.picks.length === 1 ? "Route" : "Routen"} gefunden – für mehr Auswahl Kriterien etwas lockern.</div>` : "";
+    list.innerHTML = intro + few + res.picks.map((p, k) => {
+      const r = p.result;
+      const good = r.stops.reduce((a, s) => a + s.weather.G, 0);
+      const crowdAvg = r.stops.reduce((a, s) => a + s.crowd[1] * 1 + s.crowd[2] * 2 + s.crowd[3] * 3, 0) / r.totalDays;
+      const crowdLabel = crowdAvg < 1.7 ? "wenig" : crowdAvg < 2.4 ? "mittel" : "viel";
+      return `<div class="card suggestion" style="--sugg:${SUGG_COLORS[k]}" data-sugg="${k}">
+        <div class="card-head">
+          <h2>Vorschlag ${k + 1}: ${RP.esc(regionTitle(r.stops))}</h2>
+          <button class="btn" data-apply-gen="${k}">In Reiseplan übernehmen</button>
+        </div>
+        <div class="sugg-kpis">
+          <div class="fact"><div class="k">Gesamtbudget</div><div class="v ${p.overBudget ? "over" : ""}">${RP.chf(Math.round(r.sums.total / 10) * 10)}</div></div>
+          <div class="fact"><div class="k">Dauer</div><div class="v">${r.totalDays} Tage · ${r.stops.length} ${r.stops.length === 1 ? "Land" : "Länder"}</div></div>
+          <div class="fact"><div class="k">Ideales Wetter</div><div class="v">${Math.round((100 * good) / r.totalDays)} %</div></div>
+          <div class="fact"><div class="k">Touristen</div><div class="v">${crowdLabel}</div></div>
+        </div>
+        ${p.matched.length ? `<div class="chips">${p.matched.map((a) => `<span class="chip static on">${ACTIVITIES[a]}</span>`).join("")}</div>` : ""}
+        <ol class="sugg-route">${r.stops.map((s, i) => `
+          <li>
+            <span class="stop-num">${i + 1}</span>
+            <div><a href="#" data-show="${s.country.iso}">${RP.esc(s.country.name)}</a>
+              <div class="meta">${RP.fmtDate(s.start)} – ${RP.fmtDate(s.end)} · ${s.days} Tage · ${RP.esc(s.country.sights.slice(0, 2).join(", "))}</div>
+              ${weatherBar(s)}</div>
+            <strong>${RP.chf(s.cost)}</strong>
+          </li>`).join("")}</ol>
+        <p class="hint">Aufenthalt ${RP.chf(r.sums.stay)} · Flüge & Transport ${RP.chf(r.sums.transport)} · Übriges ${RP.chf(r.sums.total - r.sums.stay - r.sums.transport)}</p>
+      </div>`;
+    }).join("");
+    drawGenMap();
+  }
+
+  function drawGenMap(active) {
+    genLayer.clearLayers();
+    const all = [];
+    genPicks.forEach((p, k) => {
+      const home = RP.budget.homePlace(plan);
+      const pts = [home.pos].concat(p.result.stops.map((s) => s.country.hub)).concat([home.pos]);
+      const path = [pts[0].slice()];
+      for (let i = 1; i < pts.length; i++) {
+        let lng = pts[i][1];
+        const prev = path[i - 1][1];
+        while (lng - prev > 180) lng -= 360;
+        while (lng - prev < -180) lng += 360;
+        path.push([pts[i][0], lng]);
+      }
+      const dim = active != null && active !== k;
+      L.polyline(path, { color: SUGG_COLORS[k], weight: dim ? 1.5 : 3, opacity: dim ? 0.25 : 0.9, dashArray: "6 5" }).addTo(genLayer);
+      p.result.stops.forEach((s, i) => {
+        L.circleMarker(path[i + 1], { radius: dim ? 4 : 6, color: "#fff", weight: 1.5, fillColor: SUGG_COLORS[k], fillOpacity: dim ? 0.3 : 1 })
+          .bindTooltip(`Vorschlag ${k + 1} · ${i + 1}. ${RP.esc(s.country.name)} (${s.days} T.)`).addTo(genLayer);
+      });
+      all.push(...path);
+    });
+    if (all.length && $("view-gen").classList.contains("active")) genMap.fitBounds(L.latLngBounds(all).pad(0.15), { maxZoom: 5 });
+  }
+
+  $("gen-list").addEventListener("mouseover", (e) => {
+    const card = e.target.closest("[data-sugg]");
+    if (card && drawGenMap.active !== +card.dataset.sugg) { drawGenMap.active = +card.dataset.sugg; drawGenMap(drawGenMap.active); }
+  });
+  $("gen-list").addEventListener("mouseleave", () => { drawGenMap.active = null; drawGenMap(); });
+  $("gen-list").addEventListener("click", (e) => {
+    const show = e.target.closest("[data-show]");
+    if (show) {
+      e.preventDefault();
+      showView("map");
+      selectCountry(show.dataset.show, true);
+      return;
+    }
+    const btn = e.target.closest("[data-apply-gen]");
+    if (!btn) return;
+    const pick = genPicks[+btn.dataset.applyGen];
+    if (plan.stops.length && !confirm("Deinen aktuellen Reiseplan durch diesen Vorschlag ersetzen?")) return;
+    plan.start = gen.start;
+    plan.style = gen.style;
+    plan.returnHome = true;
+    plan.returnLegCost = null;
+    plan.stops = pick.stops.map((s) => Object.assign({}, s, { extras: [], legCost: null }));
+    savePlan();
+    renderPlan();
+    showView("plan");
+    toast("Vorschlag in den Reiseplan übernommen.");
+  });
+
   // ───────────── Start ─────────────
   function renderAll() {
     styleMap();
@@ -657,6 +845,7 @@
 
   initFilters();
   initPlanForm();
+  initGenerator();
   renderStatus(false);
   renderAll();
   if (live.needsRefresh()) refreshLive(false);

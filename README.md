@@ -16,6 +16,11 @@ Der Plan, die Filter und die abgehakten Punkte der Checkliste werden automatisch
 - Filter: Reisemonat, max. Tageskosten, Region, Aktivitäten (Wandern, Trekking, Tauchen, Safari …), nur gutes Wetter, wenig Touristen, einfache Einreise, Sicherheitsstufe
 - Klick auf ein Land zeigt: Tageskosten (Backpacker / Mittelklasse / Komfort), Wetter und Touristen Monat für Monat, Aktivitäten, Highlights, Tipps, Einreise mit Schweizer Pass, Sicherheit, Gesundheit, typische Zusatzkosten
 
+**🎲 Reise-Generator**
+- Würfelt zufällige, passende Routen: Startdatum, Dauer, Gesamtbudget, Reisestil, Wetter, Touristen, Art der Ziele (Klassiker / Geheimtipps), Reisetempo, Aktivitäten, Regionen und Sicherheit wählbar
+- Jede Etappe passt im jeweiligen Zeitraum zu Wetter- und Touristenwünschen; nahe Länder werden bevorzugt, damit die Route zusammenhängt
+- Zeigt 3 Vorschläge mit Gesamtbudget (inkl. Flüge, Versicherung, Reserve), Wetter und Karte – «Nochmals würfeln» für neue Ideen, ein Klick übernimmt den Vorschlag in den Reiseplan
+
 **Reiseplan**
 - Länder mit Anzahl Tagen und Reisestil pro Land
 - Abflug ab Zürich, Basel oder Genf, Rückflug optional

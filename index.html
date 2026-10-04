@@ -12,6 +12,7 @@
     <div class="brand">🌍 Reiseplanung</div>
     <nav class="tabs" role="tablist">
       <button class="tab active" data-view="map">Weltkarte</button>
+      <button class="tab" data-view="gen">🎲 Reise-Generator</button>
       <button class="tab" data-view="plan">Reiseplan <span class="badge" id="plan-count">0</span></button>
       <button class="tab" data-view="check">Checkliste</button>
     </nav>
@@ -63,6 +64,71 @@
       <div class="legend" id="legend"></div>
     </div>
     <aside class="panel" id="country-panel" hidden></aside>
+  </section>
+
+  <!-- ───────────── Reise-Generator ───────────── -->
+  <section class="view" id="view-gen">
+    <div class="gen-form card">
+      <h2>🎲 Zufällige Reise erstellen</h2>
+      <p class="hint">Gib deine Wünsche ein – der Generator würfelt passende Routen. Gefällt dir eine, übernimmst du sie in den Reiseplan.</p>
+      <div class="grid2">
+        <label class="field">Startdatum <input type="date" id="g-start"></label>
+        <label class="field">Dauer
+          <span class="inline-inputs"><input type="number" id="g-dur" min="1" max="104"><select id="g-unit"><option value="1">Tage</option><option value="7">Wochen</option><option value="30">Monate</option></select></span>
+        </label>
+        <label class="field">Budget gesamt (CHF) <input type="number" id="g-budget" min="500" step="500"></label>
+        <label class="field">Reisestil
+          <select id="g-style"><option value="0">Backpacker</option><option value="1">Mittelklasse</option><option value="2">Komfort</option></select>
+        </label>
+      </div>
+      <p class="hint" id="g-budget-hint"></p>
+      <label class="field">Wetter
+        <select id="g-weather">
+          <option value="ideal">Nur ideales Reisewetter</option>
+          <option value="ok">Ideal oder okay (wenig Regen/Hitze)</option>
+          <option value="egal">Egal</option>
+        </select>
+      </label>
+      <label class="field">Touristen
+        <select id="g-crowd">
+          <option value="egal">Egal</option>
+          <option value="lieber">Lieber wenig Touristen</option>
+          <option value="wenig">Keine Hochsaison</option>
+        </select>
+      </label>
+      <label class="field">Art der Ziele
+        <select id="g-kind">
+          <option value="klassiker">Bekannte Reiseziele</option>
+          <option value="gemischt">Gemischt</option>
+          <option value="geheimtipp">Geheimtipps abseits der Massen</option>
+        </select>
+      </label>
+      <label class="field">Reisetempo
+        <select id="g-pace">
+          <option value="gemuetlich">Gemütlich (ca. 3 Wochen pro Land)</option>
+          <option value="ausgewogen">Ausgewogen (ca. 2 Wochen pro Land)</option>
+          <option value="schnell">Schnell (ca. 1 Woche pro Land)</option>
+        </select>
+      </label>
+      <div class="field">Aktivitäten <span class="hint">(jedes Land muss mind. eine bieten)</span>
+        <div class="chips" id="g-acts"></div>
+      </div>
+      <div class="field">Regionen <span class="hint">(keine Auswahl = ganze Welt)</span>
+        <div class="chips" id="g-regions"></div>
+      </div>
+      <label class="field">Sicherheit
+        <select id="g-safety">
+          <option value="1">Nur normale Vorsicht</option>
+          <option value="2">Max. erhöhte Vorsicht</option>
+          <option value="3">Auch Länder mit Teilwarnungen</option>
+        </select>
+      </label>
+      <button class="btn big" id="g-run">🎲 Reisen würfeln</button>
+    </div>
+    <div class="gen-results">
+      <div class="card"><div id="gen-map"></div></div>
+      <div id="gen-list"><div class="card empty">Noch keine Vorschläge – stelle links deine Wünsche ein und klicke auf «Reisen würfeln».</div></div>
+    </div>
   </section>
 
   <!-- ───────────── Reiseplan ───────────── -->
@@ -171,6 +237,7 @@
   <script src="js/optimizer.js"></script>
   <script src="js/checklist.js"></script>
   <script src="js/pdf.js"></script>
+  <script src="js/generator.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
