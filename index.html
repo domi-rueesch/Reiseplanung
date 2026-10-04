@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="de-CH">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reiseplanung</title>
+  <link rel="stylesheet" href="vendor/leaflet.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">🌍 Reiseplanung</div>
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-view="map">Weltkarte</button>
+      <button class="tab" data-view="plan">Reiseplan <span class="badge" id="plan-count">0</span></button>
+      <button class="tab" data-view="check">Checkliste</button>
+    </nav>
+    <div class="data-status" id="data-status" title="Live-Daten werden alle 14 Tage beim Öffnen aktualisiert"></div>
+  </header>
+
+  <!-- ───────────── Weltkarte ───────────── -->
+  <section class="view active" id="view-map">
+    <aside class="sidebar" id="filters">
+      <h2>Filter</h2>
+      <label class="field">Reisemonat
+        <select id="f-month"></select>
+      </label>
+      <label class="field">Kartenfarbe
+        <select id="f-color">
+          <option value="match">Passt zu meinen Filtern</option>
+          <option value="climate">Reisewetter im Monat</option>
+          <option value="crowd">Touristen im Monat</option>
+          <option value="cost">Kosten pro Tag</option>
+          <option value="safety">Sicherheit</option>
+        </select>
+      </label>
+      <label class="field">Max. Kosten pro Tag (Backpacker): <strong id="f-cost-label"></strong>
+        <input type="range" id="f-cost" min="20" max="300" step="5">
+      </label>
+      <label class="field">Region
+        <select id="f-region"><option value="">Alle Regionen</option></select>
+      </label>
+      <div class="field">Aktivitäten <span class="hint">(alle gewählten müssen passen)</span>
+        <div class="chips" id="f-acts"></div>
+      </div>
+      <label class="check"><input type="checkbox" id="f-weather"> Nur gutes Reisewetter</label>
+      <label class="check"><input type="checkbox" id="f-crowd"> Nur wenig/mittel Touristen</label>
+      <label class="check"><input type="checkbox" id="f-visa"> Einfache Einreise (visumfrei / online)</label>
+      <label class="field">Sicherheit
+        <select id="f-safety">
+          <option value="4">alle Länder</option>
+          <option value="3">ohne «Reise nicht empfohlen»</option>
+          <option value="2">max. erhöhte Vorsicht</option>
+          <option value="1">nur normale Vorsicht</option>
+        </select>
+      </label>
+      <button class="btn link" id="f-reset">Filter zurücksetzen</button>
+      <h2 class="results-title">Passende Länder <span id="result-count"></span></h2>
+      <ol class="results" id="results"></ol>
+    </aside>
+    <div class="map-wrap">
+      <div id="map"></div>
+      <div class="legend" id="legend"></div>
+    </div>
+    <aside class="panel" id="country-panel" hidden></aside>
+  </section>
+
+  <!-- ───────────── Reiseplan ───────────── -->
+  <section class="view" id="view-plan">
+    <div class="plan-left">
+      <div class="card">
+        <h2>Eckdaten</h2>
+        <div class="grid2">
+          <label class="field">Name der Reise <input type="text" id="p-name" placeholder="Meine grosse Reise"></label>
+          <label class="field">Startdatum <input type="date" id="p-start"></label>
+          <label class="field">Abflughafen
+            <select id="p-airport">
+              <option value="ZRH">Zürich (ZRH)</option>
+              <option value="BSL">Basel-Mulhouse (BSL)</option>
+              <option value="GVA">Genf (GVA)</option>
+            </select>
+          </label>
+          <label class="field">Standard-Reisestil
+            <select id="p-style">
+              <option value="0">Backpacker</option>
+              <option value="1">Mittelklasse</option>
+              <option value="2">Komfort</option>
+            </select>
+          </label>
+        </div>
+        <label class="check"><input type="checkbox" id="p-return"> Rückflug in die Schweiz einrechnen</label>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>Route</h2>
+          <div class="add-stop">
+            <select id="p-add-country"></select>
+            <input type="number" id="p-add-days" min="1" value="14" title="Tage">
+            <button class="btn" id="p-add">+ Hinzufügen</button>
+          </div>
+        </div>
+        <ol class="stops" id="stops"></ol>
+        <p class="empty" id="stops-empty">Noch keine Länder im Plan. Wähle oben ein Land oder klicke auf der Weltkarte auf «Zum Plan hinzufügen».</p>
+      </div>
+
+      <div class="card">
+        <h2>Route optimieren</h2>
+        <p class="hint">Sucht die Reihenfolge mit den tiefsten Transportkosten und dem besten Wetter während deines Aufenthalts.</p>
+        <label class="field">Wie wichtig ist das Wetter? <strong id="o-weather-label"></strong>
+          <input type="range" id="o-weather" min="0" max="3" step="1" value="2">
+        </label>
+        <label class="field">Wie wichtig ist es, Touristenmassen zu meiden? <strong id="o-crowd-label"></strong>
+          <input type="range" id="o-crowd" min="0" max="3" step="1" value="1">
+        </label>
+        <div class="btn-row">
+          <button class="btn" id="o-run">Reihenfolge optimieren</button>
+          <button class="btn secondary" id="o-month">Besten Startmonat finden</button>
+        </div>
+        <div id="o-result"></div>
+      </div>
+
+      <div class="card">
+        <h2>Weitere Kosten</h2>
+        <div class="grid2">
+          <label class="field">Reiseversicherung pro Monat (CHF) <input type="number" id="p-insurance" min="0" step="10"></label>
+          <label class="field">Ausrüstung einmalig (CHF) <input type="number" id="p-equipment" min="0" step="50"></label>
+          <label class="field">Reserve für Unvorhergesehenes (%) <input type="number" id="p-reserve" min="0" max="50" step="1"></label>
+          <label class="check inline"><input type="checkbox" id="p-health"> Impfungen & Medikamente schätzen</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="plan-right">
+      <div class="card summary" id="summary"></div>
+      <div class="card"><div id="plan-map"></div></div>
+      <div class="card" id="breakdown"></div>
+      <div class="btn-row">
+        <button class="btn" id="p-pdf">📄 Als PDF exportieren</button>
+        <button class="btn secondary" id="p-clear">Plan leeren</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────── Checkliste ───────────── -->
+  <section class="view" id="view-check">
+    <div class="check-wrap">
+      <div class="card">
+        <div class="card-head">
+          <h2>Checkliste für deine Reise</h2>
+          <div class="progress"><div class="bar" id="check-bar"></div><span id="check-progress"></span></div>
+        </div>
+        <p class="hint" id="check-intro"></p>
+      </div>
+      <div id="checklist"></div>
+    </div>
+  </section>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="vendor/leaflet.js"></script>
+  <script src="vendor/jspdf.umd.min.js"></script>
+  <script src="vendor/jspdf.plugin.autotable.min.js"></script>
+  <script src="js/data/countries.js"></script>
+  <script src="js/data/world.js"></script>
+  <script src="js/util.js"></script>
+  <script src="js/live.js"></script>
+  <script src="js/budget.js"></script>
+  <script src="js/optimizer.js"></script>
+  <script src="js/checklist.js"></script>
+  <script src="js/pdf.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
